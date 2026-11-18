@@ -5,7 +5,7 @@ on:
     - cron: "0 22 * * 0-5"
   workflow_dispatch: {}
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 concurrency:
@@ -19,6 +19,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: gautamkrishnar/keepalive-workflow@v2
+        with:
+          use_api: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
