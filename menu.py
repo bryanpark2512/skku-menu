@@ -38,8 +38,10 @@ def parse_week(html: str) -> dict:
         for c in wrap.select(".weeListCont"):
             name = re.sub(r"\s*코너$", "", c.select_one("h6").get_text(" ", strip=True))
             lines = []
-            for pre in c.select("ul li pre"):
-                lines += [ln.strip() for ln in pre.get_text().splitlines() if ln.strip()]
+            for li in c.select("ul li"):
+                pre = li.find("pre")
+                text = pre.get_text() if pre else li.get_text(" ", strip=True)
+                lines += [ln.strip() for ln in text.splitlines() if ln.strip()]
             if lines:
                 corners.append((name, lines))
         week[(int(m.group(1)), int(m.group(2)))] = (title, corners)
