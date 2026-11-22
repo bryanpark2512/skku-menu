@@ -17,13 +17,14 @@ RESTAURANTS = {
 HEADERS = {"User-Agent": "Mozilla/5.0 (skku-menu-bot)"}
 
 
-def fetch_week(ids: dict) -> str:
-    # srShowTime=W: 이번 주 전체, srCategory=L: 중식
+def fetch_week(ids: dict, monday=None) -> str:
+    # srShowTime=W: 한 주 전체, srCategory=L: 중식, srDt: 기준 날짜(없으면 이번 주)
     params = {"mode": "info", **ids, "srShowTime": "W", "srCategory": "L"}
+    if monday:
+        params["srDt"] = monday.strftime("%Y-%m-%d")
     r = requests.get(BASE, params=params, headers=HEADERS, timeout=20)
     r.raise_for_status()
     return r.text
-
 
 def parse_week(html: str) -> dict:
     """{(월, 일): (라벨, [(코너명, [메뉴 줄...]), ...])} 를 돌려준다."""
