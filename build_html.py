@@ -20,7 +20,19 @@ def line_html(line: str) -> str:
     return f"<li>{html.escape(line)}</li>"
 
 
-def build(weeks: dict, now: dt.datetime) -> str:
+def collect_weeks(now: dt.datetime, fetch=fetch_week):
+    """토·일에는 다음 주 월요일 기준으로 가져온다.
+    두 식당 모두 다음 주 메뉴가 있을 때만 다음 주를 쓰고, 아니면 두 식당 모두 이번 주로 되돌린다."""
+    if now.weekday() >= 5:  # 5=토, 6=일
+        monday = (now + dt.timedelta(days=7 - now.weekday())).date()
+        key = (monday.month, monday.day)
+        nxt = {n: parse_week(fetch(ids, monday)) for n, ids in RESTAURANTS.items()}
+        if all(key in w and any(c for _, c in w.values()) for w in nxt.values()):
+            return nxt, True
+    return {n: parse_week(fetch(ids)) for n, ids in RESTAURANTS.items()}, False
+
+
+def build(weeks: dict, now: dt.datetime, note: str = "") -> str:
     days = []
     titles = {}
     for week in weeks.values():
@@ -49,7 +61,7 @@ def build(weeks: dict, now: dt.datetime) -> str:
         panels.append(f'<div class="panel" data-md="{md}">{"".join(sections)}</div>')
 
     updated = now.strftime("%m/%d %H:%M")
-    return TEMPLATE.format(chips="".join(chips), panels="".join(panels), updated=updated, source=SOURCE)
+    return TEMPLATE.format(chips="".join(chips), panels="".join(panels), updated=updated, source=SOURCE, note=note)
 
 
 TEMPLATE = """<!doctype html>
@@ -80,7 +92,7 @@ li.price{{justify-content:flex-end}}
 footer{{margin-top:28px;color:var(--mute);font-size:12px}}
 footer a{{color:inherit}}
 </style></head><body><main>
-<h1>성균관대 학식 · 중식</h1>
+<h1>성균관대 학식 · 중식{note}</h1>
 <div class="chips">{chips}</div>
 {panels}
 <footer>마지막 갱신 {updated} (KST) · 학교 사이트 기준이라 식당 사정으로 바뀔 수 있어요 · <a href="{source}">원본</a></footer>
@@ -100,10 +112,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--out", default="public/index.html")
     args = ap.parse_args()
-    weeks = {n: parse_week(fetch_week(ids)) for n, ids in RESTAURANTS.items()}
+    now = dt.datetime.now(ZoneInfo("Asia/Seoul"))
+    weeks, is_next = collect_weeks(now)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(build(weeks, dt.datetime.now(ZoneInfo("Asia/Seoul"))), encoding="utf-8")
+    out.write_text(build(weeks, now, " · 다음 주" if is_next else ""), encoding="utf-8")
     print("wrote", out)
 
 
