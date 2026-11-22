@@ -1,8 +1,8 @@
 name: weekly-menu-page
 on:
   schedule:
-    # UTC 22:00 = 한국 시간 다음 날 07:00 (월~토)
-    - cron: "0 22 * * 0-5"
+        # UTC 22:00 = 한국 시간 다음 날 07:00 (매일)
+    - cron: "0 22 * * *"
   workflow_dispatch: {}
 permissions:
   contents: write
